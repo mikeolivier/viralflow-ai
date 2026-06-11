@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: viralflow-ai
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000

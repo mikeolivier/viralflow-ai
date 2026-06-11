@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: viralflow-postgres
+    environment:
+      POSTGRES_USER: viralflow
+      POSTGRES_PASSWORD: viralflow_dev_password
+      POSTGRES_DB: viralflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viralflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - viralflow-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: viralflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - viralflow-network
+
+  # LocalStack (AWS Services Emulation)
+  localstack:
+    image: localstack/localstack:latest
+    container_name: viralflow-localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      SERVICES: s3,sqs,lambda,cloudwatch
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    volumes:
+      - "${TMPDIR:-.}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - viralflow-network
+
+  # PgAdmin (PostgreSQL Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: viralflow-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@viralflow.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - viralflow-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  viralflow-network:
+    driver: bridge

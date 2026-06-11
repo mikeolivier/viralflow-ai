@@ -25,4 +25,4 @@ RUN mkdir -p /tmp/viralflow-uploads /tmp/viralflow-processed
 EXPOSE 3000
 
 # Start application
-CMD ["node", "viralflow-real-processor.js"]
+CMD ["node", "server.js"]
